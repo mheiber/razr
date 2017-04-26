@@ -27,28 +27,43 @@ let print_todos todos =
     List.iter (fun x -> print_string (" - " ^ x.text ^ "\n")) todos;
     print_newline ();;
 
-let state = ref { max_id = 1; todos = []; }
 
-let subscribers = ref []
-let changed () = List.iter (fun subscriber -> subscriber ()) !subscribers;;
-let dispatch action = state := reduce !state action; changed ();;
-let subscribe fn = subscribers := fn::!subscribers;;
+module type StoreBase = sig
+    type t
+    val get_state : unit -> t
+    val subscribe : (unit -> unit) -> unit
+    val dispatch : action -> unit
+    val dispatch_loudly : action -> (string -> unit) -> unit
+end
 
-let () = subscribe (fun () -> print_string "new state:\n"; print_todos !state.todos);;
+module type Store = StoreBase with type t := state;;
+
+module Store = struct
+    type t = state
+    let state_ref = ref { max_id = 1; todos = []; }
+    let subscribers = ref []
+    let get_state () : t = !state_ref
+    let changed () = List.iter (fun subscriber -> subscriber ()) !subscribers
+    let subscribe fn = subscribers := fn::!subscribers
+    let dispatch action = state_ref := reduce !state_ref action; changed ();;
+
+end
 
 let string_of_action = function
         | Create(text) -> "Create(" ^ text ^ ")"
         | Delete(text) -> "Delete(" ^ text ^ ")"
 
-let dispatch_loudly action = 
-                                action
-                                    |> string_of_action
-                                    |> print_string;
-                                print_newline ();
-                                dispatch action;;
+let dispatch action =
+    action
+        |> string_of_action
+        |> print_string;
+    print_newline ();
+    Store.dispatch action;;
 
 
-dispatch_loudly (Create "brush teeth");
-dispatch_loudly (Create "eat food");
-dispatch_loudly (Create "buy groceries");
-dispatch_loudly (Delete "brush teeth");
+let () =
+       Store.subscribe (fun () -> print_todos (Store.get_state ()).todos);
+       dispatch (Create "brush teeth");
+       dispatch (Create "buy groceries");
+       dispatch (Delete "brush teeth");
+       dispatch (Create "eat food groceries");;
