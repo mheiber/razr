@@ -3,6 +3,7 @@ module type Store = sig
     type state_t
     type action_t
     val get_state : unit -> state_t
+    val unsubscribe : (unit -> unit) -> unit
     val subscribe : (unit -> unit) -> unit
     val dispatch : action_t -> unit
     val reduce : state_t -> action_t -> state_t
@@ -22,6 +23,7 @@ module MakeStore(Def: Store_def) : (Store
     let subscribers = ref []
     let get_state () = !state_ref
     let reduce x = Def.reduce x
+    let unsubscribe subscriber = subscribers := List.filter (fun s -> s != subscriber) !subscribers
     let subscribe subscriber = subscribers := subscriber::!subscribers
     let changed () = List.iter (fun subscriber -> subscriber ()) !subscribers
     let dispatch action = state_ref := reduce !state_ref action; changed ();;
@@ -72,4 +74,5 @@ let () =
        dispatch (Create "brush teeth");
        dispatch (Create "buy groceries");
        dispatch (Delete "brush teeth");
-       dispatch (Create "eat food groceries");;
+       Store.unsubscribe print_state;;
+       dispatch (Create "eat food groceries");
