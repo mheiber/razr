@@ -51,7 +51,7 @@ let create_Store state =
         let changed () = List.iter (fun subscriber -> subscriber ()) !subscribers
         let subscribe subscriber = subscribers := subscriber::!subscribers
         let dispatch action = state_ref := reduce !state_ref action; changed ();;
-     end : StoreBase with type t := state) ;;
+     end : StoreBase with type t = state) ;;
 
 (*
 module Store = struct
