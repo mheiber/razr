@@ -1,4 +1,4 @@
-(* library *)
+(* define a Redux-like library *)
 module type Store = sig
     type state_t
     type action_t
@@ -29,7 +29,7 @@ module MakeStore(Def: Store_def) : (Store
     let dispatch action = state_ref := reduce !state_ref action; changed ();;
 end
 
-(* Creating a store *)
+(* use the library to create a store *)
 
 type todo = { id: int; text: string }
 type state = { max_id : int; todos : todo list; }
@@ -76,3 +76,19 @@ let () =
        dispatch (Delete "brush teeth");
        Store.unsubscribe print_state;;
        dispatch (Create "eat food groceries");
+
+(* Output:
+
+    Create(brush teeth)
+    - brush teeth
+
+    Create(buy groceries)
+    - buy groceries
+    - brush teeth
+
+    Delete(brush teeth)
+    - buy groceries
+
+    Create(eat food groceries)
+
+*)
