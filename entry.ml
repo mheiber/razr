@@ -32,8 +32,8 @@ module type StoreBase = sig
     type t
     val get_state : unit -> t
     val subscribe : (unit -> unit) -> unit
+    val unsubscribe : (unit -> unit) -> unit
     val dispatch : action -> unit
-    val dispatch_loudly : action -> (string -> unit) -> unit
 end
 
 module type Store = StoreBase with type t := state;;
@@ -44,7 +44,8 @@ module Store = struct
     let subscribers = ref []
     let get_state () : t = !state_ref
     let changed () = List.iter (fun subscriber -> subscriber ()) !subscribers
-    let subscribe fn = subscribers := fn::!subscribers
+    let subscribe subscriber = subscribers := subscriber::!subscribers
+    let unsubscribe subscriber = subscribers := List.filter (fun fn -> subscriber = fn) !subscribers
     let dispatch action = state_ref := reduce !state_ref action; changed ();;
 
 end
@@ -60,10 +61,12 @@ let dispatch action =
     print_newline ();
     Store.dispatch action;;
 
+let print_state state = print_todos (Store.get_state ()).todos;;
 
 let () =
-       Store.subscribe (fun () -> print_todos (Store.get_state ()).todos);
+       Store.subscribe print_state;
        dispatch (Create "brush teeth");
        dispatch (Create "buy groceries");
        dispatch (Delete "brush teeth");
+       Store.unsubscribe print_state;
        dispatch (Create "eat food groceries");;
