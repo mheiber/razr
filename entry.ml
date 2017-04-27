@@ -25,8 +25,8 @@ module MakeStore(Def: Store_def) : (Store
     let reduce x = Def.reduce x
     let unsubscribe subscriber = subscribers := List.filter (fun s -> s != subscriber) !subscribers
     let subscribe subscriber = subscribers := subscriber::!subscribers
-    let changed () = List.iter (fun subscriber -> subscriber ()) !subscribers
-    let dispatch action = state_ref := reduce !state_ref action; changed ();;
+    let _changed () = List.iter (fun subscriber -> subscriber ()) !subscribers
+    let dispatch action = state_ref := reduce !state_ref action; _changed ();;
 end
 
 (* use the library to create a store *)
