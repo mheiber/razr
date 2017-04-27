@@ -15,7 +15,7 @@ let create state = function
 let delete state = function
     | Delete(text) -> { state with todos = List.filter (fun todo -> todo.text <> text) state.todos }
     | _ -> state;;
-
+                
 let reducers = [create; delete]
 
 let reduce state action = 
@@ -45,7 +45,6 @@ module Store = struct
     let get_state () : t = !state_ref
     let changed () = List.iter (fun subscriber -> subscriber ()) !subscribers
     let subscribe subscriber = subscribers := subscriber::!subscribers
-    let unsubscribe subscriber = subscribers := List.filter (fun fn -> subscriber = fn) !subscribers
     let dispatch action = state_ref := reduce !state_ref action; changed ();;
 
 end
@@ -68,5 +67,4 @@ let () =
        dispatch (Create "brush teeth");
        dispatch (Create "buy groceries");
        dispatch (Delete "brush teeth");
-       Store.unsubscribe print_state;
        dispatch (Create "eat food groceries");;
