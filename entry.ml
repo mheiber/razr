@@ -26,18 +26,34 @@ let reduce state action =
 let print_todos todos =
     List.iter (fun x -> print_string (" - " ^ x.text ^ "\n")) todos;
     print_newline ();;
-
+(*val get_state : unit -> t*)
 
 module type StoreBase = sig
     type t
-    val get_state : unit -> t
     val subscribe : (unit -> unit) -> unit
-    val unsubscribe : (unit -> unit) -> unit
     val dispatch : action -> unit
 end
 
-module type Store = StoreBase with type t := state;;
+module type Z = sig
+    val x : int
+end
+module Z = struct
+    let x = 2
+end
 
+
+let create_Store state = 
+    (module struct
+        type t
+        let state_ref = ref state
+        let subscribers = ref []
+        let get_state () = !state_ref
+        let changed () = List.iter (fun subscriber -> subscriber ()) !subscribers
+        let subscribe subscriber = subscribers := subscriber::!subscribers
+        let dispatch action = state_ref := reduce !state_ref action; changed ();;
+     end : StoreBase with type t := state) ;;
+
+(*
 module Store = struct
     type t = state
     let state_ref = ref { max_id = 1; todos = []; }
@@ -47,7 +63,9 @@ module Store = struct
     let subscribe subscriber = subscribers := subscriber::!subscribers
     let dispatch action = state_ref := reduce !state_ref action; changed ();;
 
-end
+end*)
+
+module Store = (val create_Store { max_id = 1; todos = []; } : StoreBase);;
 
 let string_of_action = function
         | Create(text) -> "Create(" ^ text ^ ")"
